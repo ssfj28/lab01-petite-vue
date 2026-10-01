@@ -12,29 +12,67 @@
 
     <title>Преломление света</title>
 
-        <script>
+<script>
 
-        function RefractionDemo() {
+    function RefractionDemo() {
 
-            return {
+        return {
 
-                n1: 1,
+            n1: 1,
 
-                n2: 1.5,
+            n2: 1.5,
 
-                incidenceAngle: 30
+            incidenceAngle: 30,
 
-            };
 
-        }
+            degreesToRadians(degrees) {
 
-    </script>
+                return degrees * Math.PI / 180;
+
+            },
+
+
+            radiansToDegrees(radians) {
+
+                return radians * 180 / Math.PI;
+
+            },
+
+
+            getRefractionAngle() {
+
+                const angleRadians =
+                    this.degreesToRadians(this.incidenceAngle);
+
+                const sinRefractionAngle =
+                    (this.n1 * Math.sin(angleRadians)) / this.n2;
+
+                if (sinRefractionAngle > 1) {
+
+                    return null;
+
+                }
+
+                const refractionAngleRadians =
+                    Math.asin(sinRefractionAngle);
+
+                return this.radiansToDegrees(
+                    refractionAngleRadians
+                );
+
+            }
+
+        };
+
+    }
+
+</script>
 
     <script
-        src="https://unpkg.com/petite-vue@0.2.2/dist/petite-vue.iife.js"
-        defer
-        init
-    ></script>
+    src="https://unpkg.com/petite-vue@0.4.1/dist/petite-vue.iife.js"
+    defer
+    init
+></script>
 
 </head>
 
@@ -136,31 +174,134 @@
         Интерактивная модель
     </h2>
 
-    <label>
 
-    Показатель преломления первой среды:
-    {{ n1 }}
+    <div>
 
-    <input
-        type="range"
-        v-model="n1"
-        min="1"
-        max="3"
-        step="0.01"
+        <label for="n1">
+            Показатель преломления первой среды:
+            {{ n1 }}
+        </label>
+
+        <input
+            id="n1"
+            type="range"
+            v-model.number="n1"
+            min="1"
+            max="3"
+            step="0.01"
+        >
+
+    </div>
+
+
+    <div>
+
+        <label for="n2">
+            Показатель преломления второй среды:
+            {{ n2 }}
+        </label>
+
+        <input
+            id="n2"
+            type="range"
+            v-model.number="n2"
+            min="1"
+            max="3"
+            step="0.01"
+        >
+
+    </div>
+
+
+    <div>
+
+        <label for="incidenceAngle">
+            Угол падения:
+            {{ incidenceAngle }}°
+        </label>
+
+        <input
+            id="incidenceAngle"
+            type="range"
+            v-model.number="incidenceAngle"
+            min="0"
+            max="89"
+            step="1"
+        >
+
+    </div>
+    <p>
+
+        Угол преломления:
+
+        <span v-if="getRefractionAngle() !== null">
+            {{ getRefractionAngle().toFixed(2) }}°
+        </span>
+
+        <span v-else>
+            Преломление отсутствует:
+            полное внутреннее отражение
+        </span>
+
+    </p>
+    <div>
+
+    <svg
+        width="700"
+        height="500"
+        viewBox="0 0 700 500"
+        style="border: 1px solid #ccc;"
     >
 
-</label>
+        <!-- Верхняя среда -->
 
-    <p>
-        Показатель преломления второй среды:
-        {{ n2 }}
-    </p>
+        <rect
+            x="0"
+            y="0"
+            width="700"
+            height="250"
+            fill="#eaf4ff"
+        ></rect>
 
-    <p>
-        Угол падения:
-        {{ incidenceAngle }}°
-    </p>
 
+        <!-- Нижняя среда -->
+
+        <rect
+            x="0"
+            y="250"
+            width="700"
+            height="250"
+            fill="#d9ecff"
+        ></rect>
+
+
+        <!-- Граница сред -->
+
+        <line
+            x1="0"
+            y1="250"
+            x2="700"
+            y2="250"
+            stroke="black"
+            stroke-width="2"
+        ></line>
+
+
+        <!-- Нормаль -->
+
+        <line
+            x1="350"
+            y1="100"
+            x2="350"
+            y2="400"
+            stroke="gray"
+            stroke-width="1"
+            stroke-dasharray="6 6"
+        ></line>
+
+    </svg>
+
+</div>
 </section>
 <footer>
 
