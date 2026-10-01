@@ -20,10 +20,25 @@
 
             n1: 1,
 
-            n2: 1.5,
+n2: 1.5,
 
-            incidenceAngle: 30,
+incidenceAngle: 30,
 
+additionalRays: 2,
+
+rayDeviation: 5,
+
+mediumColor(index) {
+
+    const normalized =
+        (index - 1) / 2;
+
+    const lightness =
+        96 - normalized * 20;
+
+    return `hsl(210, 70%, ${lightness}%)`;
+
+},
 
             degreesToRadians(degrees) {
 
@@ -60,7 +75,244 @@
                     refractionAngleRadians
                 );
 
+            },
+            getRefractionAngleFor(incidenceAngle) {
+
+    const angleRadians =
+        this.degreesToRadians(incidenceAngle);
+
+    const sinRefractionAngle =
+        (this.n1 * Math.sin(angleRadians)) / this.n2;
+
+    if (sinRefractionAngle > 1) {
+
+        return null;
+
+    }
+
+    const refractionAngleRadians =
+        Math.asin(sinRefractionAngle);
+
+    return this.radiansToDegrees(
+        refractionAngleRadians
+    );
+
+},
+getAdditionalRayPoints(ray) {
+
+    const angle =
+        this.degreesToRadians(ray.angle);
+
+    const length = 220;
+
+    return {
+
+        incident: {
+
+            x1: 350 - Math.sin(angle) * length,
+
+            y1: 250 - Math.cos(angle) * length,
+
+            x2: 350,
+
+            y2: 250
+
+        },
+
+        refracted: this.getRefractionAngleFor(ray.angle) === null
+            ? null
+            : {
+
+                x1: 350,
+
+                y1: 250,
+
+                x2:
+                    350 +
+                    Math.sin(
+                        this.degreesToRadians(
+                            this.getRefractionAngleFor(ray.angle)
+                        )
+                    ) * length,
+
+                y2:
+                    250 +
+                    Math.cos(
+                        this.degreesToRadians(
+                            this.getRefractionAngleFor(ray.angle)
+                        )
+                    ) * length
+
             }
+
+    };
+
+},
+getIncidentRay() {
+
+    const angle =
+        this.degreesToRadians(this.incidenceAngle);
+
+    const length = 220;
+
+    return {
+
+        x1: 350 - Math.sin(angle) * length,
+
+        y1: 250 - Math.cos(angle) * length,
+
+        x2: 350,
+
+        y2: 250
+
+    };
+
+},
+getRefractedRay() {
+
+    const refractionAngle =
+        this.getRefractionAngle();
+
+    if (refractionAngle === null) {
+
+        return null;
+
+    }
+
+    const angle =
+        this.degreesToRadians(refractionAngle);
+
+    const length = 220;
+
+    return {
+
+        x1: 350,
+
+        y1: 250,
+
+        x2: 350 + Math.sin(angle) * length,
+
+        y2: 250 + Math.cos(angle) * length
+
+    };
+
+},
+
+getReflectedRay() {
+
+    const angle =
+        this.degreesToRadians(this.incidenceAngle);
+
+    const length = 220;
+
+    return {
+
+        x1: 350,
+
+        y1: 250,
+
+        x2: 350 - Math.sin(angle) * length,
+
+        y2: 250 - Math.cos(angle) * length
+
+    };
+
+},
+increaseRays() {
+
+    if (this.additionalRays < 10) {
+
+        this.additionalRays++;
+
+    }
+
+},
+
+
+decreaseRays() {
+
+    if (this.additionalRays > 0) {
+
+        this.additionalRays--;
+
+    }
+
+},
+getAdditionalRays() {
+
+    const rays = [];
+
+    for (let i = 0; i < this.additionalRays; i++) {
+
+        const side =
+            i % 2 === 0 ? 1 : -1;
+
+        const offset =
+            Math.ceil((i + 1) / 2) *
+            this.rayDeviation *
+            side;
+
+        const angle =
+            this.incidenceAngle + offset;
+
+        if (angle > 89 || angle < 0) {
+
+            continue;
+
+        }
+
+        rays.push({
+            angle: angle
+        });
+
+    }
+
+    return rays;
+
+},
+getRayDeviationError() {
+
+    if (
+        this.rayDeviation < 1 ||
+        this.rayDeviation > 30
+    ) {
+
+        return "Угол отклонения должен быть от 1° до 30°.";
+
+    }
+
+    return "";
+
+},
+getRaysError() {
+
+    if (
+        this.additionalRays < 0 ||
+        this.additionalRays > 10
+    ) {
+
+        return "Количество дополнительных лучей должно быть от 0 до 10.";
+
+    }
+
+    return "";
+
+},
+validateRayDeviation() {
+
+    if (this.rayDeviation < 1) {
+
+        this.rayDeviation = 1;
+
+    }
+
+    if (this.rayDeviation > 30) {
+
+        this.rayDeviation = 30;
+
+    }
+
+},
 
         };
 
@@ -73,7 +325,39 @@
     defer
     init
 ></script>
+<style>
 
+    input[type="range"] {
+
+        width: 350px;
+
+    }
+
+    input[type="number"] {
+
+        width: 80px;
+
+    }
+
+    .error {
+
+        color: red;
+
+        margin-top: 5px;
+
+    }
+
+    button {
+
+        margin-right: 5px;
+
+        padding: 5px 12px;
+
+        cursor: pointer;
+
+    }
+
+</style>
 </head>
 
 
@@ -230,6 +514,51 @@
         >
 
     </div>
+    <div>
+
+    <p>
+        Дополнительные лучи:
+        {{ additionalRays }}
+    </p>
+
+    <button
+        type="button"
+        @click="decreaseRays"
+    >
+        −
+    </button>
+
+    <button
+        type="button"
+        @click="increaseRays"
+    >
+        +
+    </button>
+
+</div>
+<div>
+
+    <label for="rayDeviation">
+        Отклонение дополнительных лучей:
+        {{ rayDeviation }}°
+    </label>
+
+    <input
+        id="rayDeviation"
+        type="number"
+        v-model.number="rayDeviation"
+        min="1"
+        max="30"
+        step="1"
+    >
+    <p
+    v-if="getRayDeviationError()"
+    style="color: red;"
+>
+    {{ getRayDeviationError() }}
+</p>
+
+</div>
     <p>
 
         Угол преломления:
@@ -251,7 +580,8 @@
         height="500"
         viewBox="0 0 700 500"
         style="border: 1px solid #ccc;"
-    >
+        >
+    
 
         <!-- Верхняя среда -->
 
@@ -260,7 +590,7 @@
             y="0"
             width="700"
             height="250"
-            fill="#eaf4ff"
+            :fill="mediumColor(n1)"
         ></rect>
 
 
@@ -271,7 +601,7 @@
             y="250"
             width="700"
             height="250"
-            fill="#d9ecff"
+            :fill="mediumColor(n2)"
         ></rect>
 
 
@@ -298,7 +628,58 @@
             stroke-width="1"
             stroke-dasharray="6 6"
         ></line>
+<line
+    :x1="getIncidentRay().x1"
+    :y1="getIncidentRay().y1"
+    :x2="getIncidentRay().x2"
+    :y2="getIncidentRay().y2"
+    stroke="red"
+    stroke-width="4"
+></line>
+<g v-for="ray in getAdditionalRays()">
 
+    <line
+        :x1="getAdditionalRayPoints(ray).incident.x1"
+        :y1="getAdditionalRayPoints(ray).incident.y1"
+        :x2="getAdditionalRayPoints(ray).incident.x2"
+        :y2="getAdditionalRayPoints(ray).incident.y2"
+        stroke="orange"
+        stroke-width="2"
+    ></line>
+
+    <line
+        v-if="getAdditionalRayPoints(ray).refracted !== null"
+        :x1="getAdditionalRayPoints(ray).refracted.x1"
+        :y1="getAdditionalRayPoints(ray).refracted.y1"
+        :x2="getAdditionalRayPoints(ray).refracted.x2"
+        :y2="getAdditionalRayPoints(ray).refracted.y2"
+        stroke="orange"
+        stroke-width="2"
+    ></line>
+
+</g>
+<line
+    v-if="getRefractedRay() !== null"
+
+    :x1="getRefractedRay().x1"
+    :y1="getRefractedRay().y1"
+    :x2="getRefractedRay().x2"
+    :y2="getRefractedRay().y2"
+
+    stroke="red"
+    stroke-width="4"
+></line>
+<line
+    v-if="getRefractionAngle() === null"
+
+    :x1="getReflectedRay().x1"
+    :y1="getReflectedRay().y1"
+    :x2="getReflectedRay().x2"
+    :y2="getReflectedRay().y2"
+
+    stroke="red"
+    stroke-width="4"
+></line>
     </svg>
 
 </div>
